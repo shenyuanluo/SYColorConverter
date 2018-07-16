@@ -31,6 +31,7 @@
 		141372BC20FB99E300291ABB /* YuvToRgb.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = YuvToRgb.h; sourceTree = "<group>"; };
 		141372BE20FB9A0400291ABB /* RgbToYuv.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = RgbToYuv.cpp; sourceTree = "<group>"; };
 		141372BF20FB9A0400291ABB /* RgbToYuv.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = RgbToYuv.h; sourceTree = "<group>"; };
+		142DEED320FC3C05008FC7F4 /* Converter.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = Converter.h; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -72,6 +73,7 @@
 		141372BA20FB99D100291ABB /* SYColorConverter */ = {
 			isa = PBXGroup;
 			children = (
+				142DEED320FC3C05008FC7F4 /* Converter.h */,
 				141372BB20FB99E300291ABB /* YuvToRgb.cpp */,
 				141372BC20FB99E300291ABB /* YuvToRgb.h */,
 				141372BE20FB9A0400291ABB /* RgbToYuv.cpp */,

@@ -8,19 +8,18 @@
 
 #include "YuvToRgb.h"
 
-// 夹紧函数定义：限制在两者范围之间
-#define CLAMP(x, low, high)  (((x) > (high)) ? (high) : (((x) < (low)) ? (low) : (x)))
-
-
 #pragma mark - Public
+#pragma mark -- 构造函数
 YuvToRgb::YuvToRgb()
 {
     m_mType = matrix_normal;
     m_cType = convert_normal;
+    m_eType = CheckEndian();
     
     initYuvTable();
 }
 
+#pragma mark -- 析构函数
 YuvToRgb::~YuvToRgb()
 {
     
@@ -39,13 +38,13 @@ void YuvToRgb::setMatrixType(MatrixType mType)
 }
 
 #pragma mark -- I420 转 RGB565
-bool YuvToRgb::I420ToRgb565(unsigned char *inYuv, unsigned int width, unsigned int height, unsigned char *outRgb)
+bool YuvToRgb::I420ToRgb565(unsigned char* inYuv, unsigned int width, unsigned int height, unsigned char* outRgb)
 {
     if (NULL == inYuv || NULL == outRgb || 0 == width || 0 == height)
     {
         return false;
     }
-    const long len = width * height;
+    const long len = width * height;    // 像素点数
     unsigned char *yData, *uData, *vData;   // 分量 Y、U、V 数据
     int y, u, v;      // 当前像素点 Y、U、V 值
     int r, g, b;      // 当前像素点 R、G、B 值
@@ -62,7 +61,7 @@ bool YuvToRgb::I420ToRgb565(unsigned char *inYuv, unsigned int width, unsigned i
         for (int col = 0; col < width; col++)   // 遍历所有列
         {
             /*
-             提取每个像素点 Y'CbCr 值
+             提取每个像素点 YUV 值
              由于 U(Cb)、V(Cr) 取值范围是 [﹣128, 127]；
              而在存储时，为了方便存储，跟 Y 数据一样，统一用一个(无符号)字节表示，即取值范围是 [0, 255];
              所以在读取时，需要 将 U(Cb)、V(Cr)的值减去 128，使其变为 ：[﹣128, 127]。
@@ -104,7 +103,7 @@ bool YuvToRgb::I420ToRgb565(unsigned char *inYuv, unsigned int width, unsigned i
             colorLow = (g & 0x1C)<<3;
             colorLow |= (b & 0xF8)>>3;
             
-            switch (CheckEndian())
+            switch (m_eType)
             {
                 case endian_little: // 小端
                 {
@@ -130,13 +129,13 @@ bool YuvToRgb::I420ToRgb565(unsigned char *inYuv, unsigned int width, unsigned i
 }
 
 #pragma mark -- I420 转 RGB24
-bool YuvToRgb::I420ToRgb24(unsigned char *inYuv, unsigned int width, unsigned int height, unsigned char *outRgb)
+bool YuvToRgb::I420ToRgb24(unsigned char* inYuv, unsigned int width, unsigned int height, unsigned char* outRgb)
 {
     if (inYuv == NULL || outRgb == NULL || 0 == width || 0 == height)
     {
         return false;
     }
-    const long len = width * height;
+    const long len = width * height;    // 像素点数
     unsigned char *yData, *uData, *vData;
     int y, u, v;      // 当前像素点 Y、U、V 值
     int r, g, b;      // 当前像素点 R、G、B 值
@@ -150,7 +149,7 @@ bool YuvToRgb::I420ToRgb24(unsigned char *inYuv, unsigned int width, unsigned in
         for (int col = 0; col < width; col++)   // 遍历所有列
         {
             /*
-             提取每个像素点 Y'CbCr 值
+             提取每个像素点 YUV 值
              由于 U(Cb)、V(Cr) 取值范围是 [﹣128, 127]；
              而在存储时，为了方便存储，跟 Y 数据一样，统一用一个(无符号)字节表示，即取值范围是 [0, 255];
              所以在读取时，需要 将 U(Cb)、V(Cr)的值减去 128，使其变为 ：[﹣128, 127]。
@@ -180,7 +179,7 @@ bool YuvToRgb::I420ToRgb24(unsigned char *inYuv, unsigned int width, unsigned in
                      0   1   2   3   4   5   6   7   8   9  10  11  12  13  14  15  16  17  18  19  20  21  22  23
              */
             
-            switch (CheckEndian())
+            switch (m_eType)
             {
                 case endian_little: // 小端
                 {
@@ -269,6 +268,7 @@ void YuvToRgb::initYuvTable()
     
     for (int i = 0; i < 256; i++)
     {
+        // U(Cb)、V(Cr) 记得减去 128
         m_rv[i] = ((i - 128) * rv)>>8;
         m_gu[i] = ((i - 128) * gu)>>8;
         m_gv[i] = ((i - 128) * gv)>>8;
@@ -277,7 +277,7 @@ void YuvToRgb::initYuvTable()
 }
 
 #pragma mark -- 将单个像素 YUV 转成 RGB
-void YuvToRgb::yuv2rgb(int y, int u, int v, int *r, int *g, int *b) const
+void YuvToRgb::yuv2rgb(int y, int u, int v, int* r, int* g, int* b) const
 {
     switch (m_mType)
     {
