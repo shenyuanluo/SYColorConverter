@@ -12,8 +12,8 @@
 #pragma mark -- 构造函数
 YuvToRgb::YuvToRgb()
 {
-    m_mType = matrix_normal;
-    m_cType = convert_normal;
+    m_mType = Matrix_normal;
+    m_cType = Convert_normal;
     m_eType = CheckEndian();
     
     initYuvTable();
@@ -37,8 +37,9 @@ void YuvToRgb::setMatrixType(MatrixType mType)
     m_mType = mType;
 }
 
+#pragma mark - Out RGB565
 #pragma mark -- I420 转 RGB565
-bool YuvToRgb::I420ToRgb565(unsigned char* inYuv, unsigned int width, unsigned int height, unsigned char* outRgb)
+bool YuvToRgb::I420ToRgb565(unsigned char* inYuv, unsigned int width, unsigned int height, unsigned char* outRgb) const
 {
     if (NULL == inYuv || NULL == outRgb || 0 == width || 0 == height)
     {
@@ -54,7 +55,7 @@ bool YuvToRgb::I420ToRgb565(unsigned char* inYuv, unsigned int width, unsigned i
     uData = yData + len;        // 获取 U 数据地址
     vData = uData + (len>>2);   // 获取 V 数据地址
     
-    int idx = 0;    // 转换后 rgb565 内存地址下标
+    int idx = 0;    // 转换后 rgb565 内存地址偏移量
     // 遍历所有像素点
     for (int row = 0; row < height; row++)  // 遍历所有行
     {
@@ -68,7 +69,7 @@ bool YuvToRgb::I420ToRgb565(unsigned char* inYuv, unsigned int width, unsigned i
              */
             
             // 由于查表法在表格创建时，已经减去了 128，所以在此处不用再减
-            if (convert_table == m_cType)
+            if (Convert_table == m_cType)
             {
                 y = (int)yData[row * width + col];
                 u = (int)uData[(row/2) * (width/2) + (col/2)];
@@ -82,14 +83,6 @@ bool YuvToRgb::I420ToRgb565(unsigned char* inYuv, unsigned int width, unsigned i
             }
             
             yuv2rgb(y, u, v, &r, &g, &b);   // 计算对应 R、G、B 值
-            
-            /* RGB565 内存布局（注意大小端）
-                           R                     G                     B
-                 +---------------------------------------------------------------+
-           高字节 | R | R | R | R | R | G | G | G | G | G | G | B | B | B | B | B |  低字节
-                 +---------------------------------------------------------------+
-                   0   1   2   3   4   5   6   7   8   9  10  11  12  13  14  15
-             */
             
             // 重置
             colorLow  = 0;
@@ -105,15 +98,14 @@ bool YuvToRgb::I420ToRgb565(unsigned char* inYuv, unsigned int width, unsigned i
             
             switch (m_eType)
             {
-                case endian_little: // 小端
+                case Endian_little: // 小端
                 {
                     outRgb[idx++] = colorLow;
                     outRgb[idx++] = colorHigh;
-
                 }
                     break;
                     
-                case endian_big:    // 大端
+                case Endian_big:    // 大端
                 {
                     outRgb[idx++] = colorHigh;
                     outRgb[idx++] = colorLow;
@@ -128,8 +120,175 @@ bool YuvToRgb::I420ToRgb565(unsigned char* inYuv, unsigned int width, unsigned i
     return true;
 }
 
+#pragma mark -- NV12 转 RGB565
+bool YuvToRgb::Nv12ToRgb565(unsigned char* inYuv, unsigned int width, unsigned int height, unsigned char* outRgb) const
+{
+    if (inYuv == NULL || outRgb == NULL || 0 == width || 0 == height)
+    {
+        return false;
+    }
+    const long len = width * height;    // 像素点数
+    unsigned char *yData, *uvData;
+    int y, u, v;      // 当前像素点 Y、U、V 值
+    int r, g, b;      // 当前像素点 R、G、B 值
+    unsigned char colorLow;     // 转换后 rgb565 颜色值-低字节
+    unsigned char colorHigh;    // 转换后 rgb565 颜色值-高字节
+    yData  = inYuv;              // 获取 Y 数据地址
+    uvData = yData + len;        // 获取 UV 数据地址
+    
+    int idx  = 0;   // 转换后 rgb24 数据内存地址偏移量
+    int uPos = 0;   // U 数据位置
+    for (int row = 0; row < height; row++)  // 遍历所有行
+    {
+        for (int col = 0; col < width; col++)   // 遍历所有列
+        {
+            /*
+             提取每个像素点 YUV 值
+             由于 U(Cb)、V(Cr) 取值范围是 [﹣128, 127]；
+             而在存储时，为了方便存储，跟 Y 数据一样，统一用一个(无符号)字节表示，即取值范围是 [0, 255];
+             所以在读取时，需要 将 U(Cb)、V(Cr)的值减去 128，使其变为 ：[﹣128, 127]。
+             */
+            
+            uPos = (row/2) * width + (col - col%2);
+            
+            // 由于查表法在表格创建时，已经减去了 128，所以在此处不用再减
+            if (Convert_table == m_cType)
+            {
+                y = (int)yData[row * width + col];
+                u = (int)uvData[uPos];
+                v = (int)uvData[uPos + 1];
+            }
+            else
+            {
+                y = (int)yData[row * width + col];
+                u = (int)(uvData[uPos] - 128);
+                v = (int)(uvData[uPos + 1] - 128);
+            }
+            
+            yuv2rgb(y, u, v, &r, &g, &b);
+            
+            // 重置
+            colorLow  = 0;
+            colorHigh = 0;
+            
+            // 填充高字节：R(5bit) + G(3bit)
+            colorHigh = r & 0xF8;
+            colorHigh |= (g & 0xE0)>>5;
+            
+            // 填充低字节：G(3bit) + B(5bit)
+            colorLow = (g & 0x1C)<<3;
+            colorLow |= (b & 0xF8)>>3;
+            
+            switch (m_eType)
+            {
+                case Endian_little: // 小端
+                {
+                    outRgb[idx++] = colorLow;
+                    outRgb[idx++] = colorHigh;
+                }
+                    break;
+                    
+                case Endian_big:    // 大端
+                {
+                    outRgb[idx++] = colorHigh;
+                    outRgb[idx++] = colorLow;
+                }
+                    break;
+                    
+                default:
+                    break;
+            }
+        }
+    }
+    return true;
+}
+
+#pragma mark -- NV21 转 RGB565
+bool YuvToRgb::Nv21ToRgb565(unsigned char* inYuv, unsigned int width, unsigned int height, unsigned char* outRgb) const
+{
+    if (inYuv == NULL || outRgb == NULL || 0 == width || 0 == height)
+    {
+        return false;
+    }
+    const long len = width * height;    // 像素点数
+    unsigned char *yData, *vuData;
+    int y, u, v;      // 当前像素点 Y、U、V 值
+    int r, g, b;      // 当前像素点 R、G、B 值
+    unsigned char colorLow;     // 转换后 rgb565 颜色值-低字节
+    unsigned char colorHigh;    // 转换后 rgb565 颜色值-高字节
+    yData  = inYuv;              // 获取 Y 数据地址
+    vuData = yData + len;        // 获取 VU 数据地址
+    
+    int idx  = 0;   // 转换后 rgb24 数据内存地址偏移量
+    int vPos = 0;   // V 数据位置
+    for (int row = 0; row < height; row++)  // 遍历所有行
+    {
+        for (int col = 0; col < width; col++)   // 遍历所有列
+        {
+            /*
+             提取每个像素点 YUV 值
+             由于 U(Cb)、V(Cr) 取值范围是 [﹣128, 127]；
+             而在存储时，为了方便存储，跟 Y 数据一样，统一用一个(无符号)字节表示，即取值范围是 [0, 255];
+             所以在读取时，需要 将 U(Cb)、V(Cr)的值减去 128，使其变为 ：[﹣128, 127]。
+             */
+            
+            vPos = (row/2) * width + (col - col%2);
+            
+            // 由于查表法在表格创建时，已经减去了 128，所以在此处不用再减
+            if (Convert_table == m_cType)
+            {
+                y = (int)yData[row * width + col];
+                v = (int)vuData[vPos];
+                u = (int)vuData[vPos + 1];
+            }
+            else
+            {
+                y = (int)yData[row * width + col];
+                v = (int)(vuData[vPos] - 128);
+                u = (int)(vuData[vPos + 1] - 128);
+            }
+            
+            yuv2rgb(y, u, v, &r, &g, &b);
+            
+            // 重置
+            colorLow  = 0;
+            colorHigh = 0;
+            
+            // 填充高字节：R(5bit) + G(3bit)
+            colorHigh = r & 0xF8;
+            colorHigh |= (g & 0xE0)>>5;
+            
+            // 填充低字节：G(3bit) + B(5bit)
+            colorLow = (g & 0x1C)<<3;
+            colorLow |= (b & 0xF8)>>3;
+            
+            switch (m_eType)
+            {
+                case Endian_little: // 小端
+                {
+                    outRgb[idx++] = colorLow;
+                    outRgb[idx++] = colorHigh;
+                }
+                    break;
+                    
+                case Endian_big:    // 大端
+                {
+                    outRgb[idx++] = colorHigh;
+                    outRgb[idx++] = colorLow;
+                }
+                    break;
+                    
+                default:
+                    break;
+            }
+        }
+    }
+    return true;
+}
+
+#pragma mark - Out RGB24
 #pragma mark -- I420 转 RGB24
-bool YuvToRgb::I420ToRgb24(unsigned char* inYuv, unsigned int width, unsigned int height, unsigned char* outRgb)
+bool YuvToRgb::I420ToRgb24(unsigned char* inYuv, unsigned int width, unsigned int height, unsigned char* outRgb) const
 {
     if (inYuv == NULL || outRgb == NULL || 0 == width || 0 == height)
     {
@@ -143,7 +302,7 @@ bool YuvToRgb::I420ToRgb24(unsigned char* inYuv, unsigned int width, unsigned in
     uData = yData + len;        // 获取 U 数据地址
     vData = uData + (len>>2);   // 获取 V 数据地址
     
-    int idx = 0;
+    int idx = 0;    // 转换后 rgb24 数据内存地址偏移量
     for (int row = 0; row < height; row++)  // 遍历所有行
     {
         for (int col = 0; col < width; col++)   // 遍历所有列
@@ -156,7 +315,7 @@ bool YuvToRgb::I420ToRgb24(unsigned char* inYuv, unsigned int width, unsigned in
              */
             
             // 由于查表法在表格创建时，已经减去了 128，所以在此处不用再减
-            if (convert_table == m_cType)
+            if (Convert_table == m_cType)
             {
                 y = (int)yData[row * width + col];
                 u = (int)uData[(row/2) * (width/2) + (col/2)];
@@ -171,26 +330,17 @@ bool YuvToRgb::I420ToRgb24(unsigned char* inYuv, unsigned int width, unsigned in
             
             yuv2rgb(y, u, v, &r, &g, &b);
             
-            /* RGB24 内存布局（注意大小端）
-                                   B                               G                               R
-                   +-----------------------------------------------------------------------------------------------+
-             高字节 | B | B | B | B | B | B | B | B | G | G | G | G | G | G | G | G | R | R | R | R | R | R | R | R |   低字节
-                   +-----------------------------------------------------------------------------------------------+
-                     0   1   2   3   4   5   6   7   8   9  10  11  12  13  14  15  16  17  18  19  20  21  22  23
-             */
-            
             switch (m_eType)
             {
-                case endian_little: // 小端
+                case Endian_little: // 小端
                 {
                     outRgb[idx++] = (char)r;
                     outRgb[idx++] = (char)g;
                     outRgb[idx++] = (char)b;
-                    
                 }
                     break;
                     
-                case endian_big:    // 大端
+                case Endian_big:    // 大端
                 {
                     outRgb[idx++] = (char)b;
                     outRgb[idx++] = (char)g;
@@ -206,6 +356,147 @@ bool YuvToRgb::I420ToRgb24(unsigned char* inYuv, unsigned int width, unsigned in
     return true;
 }
 
+#pragma mark -- NV12 转 RGB24
+bool YuvToRgb::Nv12ToRgb24(unsigned char* inYuv, unsigned int width, unsigned int height, unsigned char* outRgb) const
+{
+    if (inYuv == NULL || outRgb == NULL || 0 == width || 0 == height)
+    {
+        return false;
+    }
+    const long len = width * height;    // 像素点数
+    unsigned char *yData, *uvData;
+    int y, u, v;      // 当前像素点 Y、U、V 值
+    int r, g, b;      // 当前像素点 R、G、B 值
+    yData  = inYuv;              // 获取 Y 数据地址
+    uvData = yData + len;        // 获取 UV 数据地址
+    
+    int idx  = 0;   // 转换后 rgb24 数据内存地址偏移量
+    int uPos = 0;   // U 数据位置
+    for (int row = 0; row < height; row++)  // 遍历所有行
+    {
+        for (int col = 0; col < width; col++)   // 遍历所有列
+        {
+            /*
+             提取每个像素点 YUV 值
+             由于 U(Cb)、V(Cr) 取值范围是 [﹣128, 127]；
+             而在存储时，为了方便存储，跟 Y 数据一样，统一用一个(无符号)字节表示，即取值范围是 [0, 255];
+             所以在读取时，需要 将 U(Cb)、V(Cr)的值减去 128，使其变为 ：[﹣128, 127]。
+             */
+            
+            uPos = (row/2) * width + (col - col%2);
+            
+            // 由于查表法在表格创建时，已经减去了 128，所以在此处不用再减
+            if (Convert_table == m_cType)
+            {
+                y = (int)yData[row * width + col];
+                u = (int)uvData[uPos];
+                v = (int)uvData[uPos + 1];
+            }
+            else
+            {
+                y = (int)yData[row * width + col];
+                u = (int)(uvData[uPos] - 128);
+                v = (int)(uvData[uPos + 1] - 128);
+            }
+            
+            yuv2rgb(y, u, v, &r, &g, &b);
+            
+            switch (m_eType)
+            {
+                case Endian_little: // 小端
+                {
+                    outRgb[idx++] = (char)r;
+                    outRgb[idx++] = (char)g;
+                    outRgb[idx++] = (char)b;                    
+                }
+                    break;
+                    
+                case Endian_big:    // 大端
+                {
+                    outRgb[idx++] = (char)b;
+                    outRgb[idx++] = (char)g;
+                    outRgb[idx++] = (char)r;
+                }
+                    break;
+                    
+                default:
+                    break;
+            }
+        }
+    }
+    return true;
+}
+
+#pragma mark -- NV21 转 RGB24
+bool YuvToRgb::Nv21ToRgb24(unsigned char* inYuv, unsigned int width, unsigned int height, unsigned char* outRgb) const
+{
+    if (inYuv == NULL || outRgb == NULL || 0 == width || 0 == height)
+    {
+        return false;
+    }
+    const long len = width * height;    // 像素点数
+    unsigned char *yData, *vuData;
+    int y, u, v;      // 当前像素点 Y、U、V 值
+    int r, g, b;      // 当前像素点 R、G、B 值
+    yData  = inYuv;              // 获取 Y 数据地址
+    vuData = yData + len;        // 获取 VU 数据地址
+    
+    int idx  = 0;   // 转换后 rgb24 数据内存地址偏移量
+    int vPos = 0;   // V 数据位置
+    for (int row = 0; row < height; row++)  // 遍历所有行
+    {
+        for (int col = 0; col < width; col++)   // 遍历所有列
+        {
+            /*
+             提取每个像素点 YUV 值
+             由于 U(Cb)、V(Cr) 取值范围是 [﹣128, 127]；
+             而在存储时，为了方便存储，跟 Y 数据一样，统一用一个(无符号)字节表示，即取值范围是 [0, 255];
+             所以在读取时，需要 将 U(Cb)、V(Cr)的值减去 128，使其变为 ：[﹣128, 127]。
+             */
+            
+            vPos = (row/2) * width + (col - col%2);
+            
+            // 由于查表法在表格创建时，已经减去了 128，所以在此处不用再减
+            if (Convert_table == m_cType)
+            {
+                y = (int)yData[row * width + col];
+                v = (int)vuData[vPos];
+                u = (int)vuData[vPos + 1];
+            }
+            else
+            {
+                y = (int)yData[row * width + col];
+                v = (int)(vuData[vPos] - 128);
+                u = (int)(vuData[vPos + 1] - 128);
+            }
+            
+            yuv2rgb(y, u, v, &r, &g, &b);
+            
+            switch (m_eType)
+            {
+                case Endian_little: // 小端
+                {
+                    outRgb[idx++] = (char)r;
+                    outRgb[idx++] = (char)g;
+                    outRgb[idx++] = (char)b;
+                }
+                    break;
+                    
+                case Endian_big:    // 大端
+                {
+                    outRgb[idx++] = (char)b;
+                    outRgb[idx++] = (char)g;
+                    outRgb[idx++] = (char)r;
+                }
+                    break;
+                    
+                default:
+                    break;
+            }
+        }
+    }
+    return true;
+}
 
 #pragma mark - Private
 #pragma mark -- 检查大小端
@@ -218,11 +509,11 @@ EndianType YuvToRgb::CheckEndian()
     
     if ('l' == (char)endianUnion.num)   // 取首字节判断
     {
-        return endian_little;
+        return Endian_little;
     }
     else // 'b' == (char)endianUnion.num
     {
-        return endian_big;
+        return Endian_big;
     }
 }
 
@@ -235,7 +526,7 @@ void YuvToRgb::initYuvTable()
     int bu = 0;     // 计算 B 值 U 系数
     switch (m_mType)
     {
-        case matrix_normal:  // 常规标准
+        case Matrix_normal:  // 常规标准
         {
             rv = 351;
             gu = 86;
@@ -244,7 +535,7 @@ void YuvToRgb::initYuvTable()
         }
             break;
             
-        case matrix_bt_601:  // BT.601 标准
+        case Matrix_bt_601:  // BT.601 标准
         {
             rv = 292;
             gu = 101;
@@ -253,7 +544,7 @@ void YuvToRgb::initYuvTable()
         }
             break;
             
-        case matrix_bt_709:  // BT.709 标准
+        case Matrix_bt_709:  // BT.709 标准
         {
             rv = 328;
             gu = 55;
@@ -281,11 +572,11 @@ void YuvToRgb::yuv2rgb(int y, int u, int v, int* r, int* g, int* b) const
 {
     switch (m_mType)
     {
-        case matrix_normal:
+        case Matrix_normal:
         {
             switch (m_cType)
             {
-                case convert_normal: // 常规方法：浮点运算，精度高
+                case Convert_normal: // 常规方法：浮点运算，精度高
                 {
                     *r = y                  + (1.370705 * v);
                     *g = y - (0.337633 * u) - (0.698001 * v);
@@ -293,7 +584,7 @@ void YuvToRgb::yuv2rgb(int y, int u, int v, int* r, int* g, int* b) const
                 }
                     break;
                     
-                case convert_bitMult:  // 通过位移来避免浮点运算，精度低
+                case Convert_bitMult:  // 通过位移来避免浮点运算，精度低
                 {
                     *r = ((256 * y             + (351 * v))>>8);
                     *g = ((256 * y - (86  * u) - (179 * v))>>8);
@@ -301,7 +592,7 @@ void YuvToRgb::yuv2rgb(int y, int u, int v, int* r, int* g, int* b) const
                 }
                     break;
                     
-                case convert_bitAdd:   // 通过位移来避免乘法运算，精度低
+                case Convert_bitAdd:   // 通过位移来避免乘法运算，精度低
                 {
                     *r = (((y<<8) + (v<<8) + (v<<6) + (v<<4) + (v<<3) + (v<<2) + (v<<1) + v)                   >> 8);
                     *g = (((y<<8) - (u<<6) - (u<<4) - (u<<2) - (u<<1) - (v<<7) - (v<<5) - (v<<4) - (v<<1) - v) >> 8);
@@ -309,7 +600,7 @@ void YuvToRgb::yuv2rgb(int y, int u, int v, int* r, int* g, int* b) const
                 }
                     break;
                     
-                case convert_table: // 查表法（也是位移计算），精度低
+                case Convert_table: // 查表法（也是位移计算），精度低
                 {
                     *r = y + m_rv[v];
                     *g = y - m_gu[u] - m_gv[v];
@@ -323,11 +614,11 @@ void YuvToRgb::yuv2rgb(int y, int u, int v, int* r, int* g, int* b) const
         }
             break;
             
-        case matrix_bt_601:
+        case Matrix_bt_601:
         {
             switch (m_cType)
             {
-                case convert_normal: // 常规方法：浮点运算，精度高
+                case Convert_normal: // 常规方法：浮点运算，精度高
                 {
                     *r = (y               + 1.13983 * v);
                     *g = (y - 0.39465 * u - 0.5806  * v);
@@ -335,7 +626,7 @@ void YuvToRgb::yuv2rgb(int y, int u, int v, int* r, int* g, int* b) const
                 }
                     break;
                     
-                case convert_bitMult:  // 通过位移来避免浮点运算，精度低
+                case Convert_bitMult:  // 通过位移来避免浮点运算，精度低
                 {
                     *r = ((256 * y           + 292 * v)>>8);
                     *g = ((256 * y - 101 * u - 149 * v)>>8);
@@ -343,7 +634,7 @@ void YuvToRgb::yuv2rgb(int y, int u, int v, int* r, int* g, int* b) const
                 }
                     break;
                     
-                case convert_bitAdd:   // 通过位移来避免乘法运算，精度低
+                case Convert_bitAdd:   // 通过位移来避免乘法运算，精度低
                 {
                     *r = (((y<<8) + (v<<8) + (v<<5) + (v<<2))                                   >>8);
                     *g = (((y<<8) + (u<<6) + (u<<5) + (u<<2) + u + (v<<7) + (v<<4) + (v<<2) + v)>>8);
@@ -351,7 +642,7 @@ void YuvToRgb::yuv2rgb(int y, int u, int v, int* r, int* g, int* b) const
                 }
                     break;
                     
-                case convert_table: // 查表法（也是位移计算），精度低
+                case Convert_table: // 查表法（也是位移计算），精度低
                 {
                     *r = y + m_rv[v];
                     *g = y - m_gu[u] - m_gv[v];
@@ -365,11 +656,11 @@ void YuvToRgb::yuv2rgb(int y, int u, int v, int* r, int* g, int* b) const
         }
             break;
             
-        case matrix_bt_709:
+        case Matrix_bt_709:
         {
             switch (m_cType)
             {
-                case convert_normal: // 常规方法：浮点运算，精度高
+                case Convert_normal: // 常规方法：浮点运算，精度高
                 {
                     *r = (y               + 1.28033 * v);
                     *g = (y - 0.21482 * u - 0.38059 * v);
@@ -377,7 +668,7 @@ void YuvToRgb::yuv2rgb(int y, int u, int v, int* r, int* g, int* b) const
                 }
                     break;
                     
-                case convert_bitMult:  // 通过位移来避免浮点运算，精度低
+                case Convert_bitMult:  // 通过位移来避免浮点运算，精度低
                 {
                     *r = ((256 * y           + 328 * v)>>8);
                     *g = ((256 * y - 55  * u - 97  * v)>>8);
@@ -385,7 +676,7 @@ void YuvToRgb::yuv2rgb(int y, int u, int v, int* r, int* g, int* b) const
                 }
                     break;
                     
-                case convert_bitAdd:   // 通过位移来避免乘法运算，精度低
+                case Convert_bitAdd:   // 通过位移来避免乘法运算，精度低
                 {
                     *r = (((y<<8) + (v<<8) + (v<<6) + (v<<3))                                   >>8);
                     *g = (((y<<8) + (u<<5) + (u<<4) + (u<<2) + (u<<1) + u + (v<<6) + (v<<5) + v)>>8);
@@ -393,7 +684,7 @@ void YuvToRgb::yuv2rgb(int y, int u, int v, int* r, int* g, int* b) const
                 }
                     break;
                     
-                case convert_table: // 查表法（也是位移计算），精度低
+                case Convert_table: // 查表法（也是位移计算），精度低
                 {
                     *r = y + m_rv[v];
                     *g = y - m_gu[u] - m_gv[v];

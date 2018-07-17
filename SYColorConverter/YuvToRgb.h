@@ -92,27 +92,90 @@ public:
      */
     void setMatrixType(MatrixType mType);
     
+    
+    /* RGB565 内存布局（注意大小端）
+                   R                     G                     B
+         +---------------------------------------------------------------+
+   高字节 | R | R | R | R | R | G | G | G | G | G | G | B | B | B | B | B |  低字节
+         +---------------------------------------------------------------+
+           0   1   2   3   4   5   6   7   8   9  10  11  12  13  14  15
+     */
+    
     /**
      I420 转 RGB565
 
-     @param inYuv yuv-I420数据（输入）
+     @param inYuv I420数据（输入）
      @param width 帧-宽度
      @param height 帧-高度
      @param outRgb RGB565数据（输出）
      @return 转换是否成功
      */
-    bool I420ToRgb565(unsigned char* inYuv, unsigned int width, unsigned int height, unsigned char* outRgb);
+    bool I420ToRgb565(unsigned char* inYuv, unsigned int width, unsigned int height, unsigned char* outRgb) const;
     
     /**
-     yuv-I420 转 RGB24
+     NV12 转 RGB565
+     
+     @param inYuv NV12数据（输入）
+     @param width 帧-宽度
+     @param height 帧-高度
+     @param outRgb RGB565数据（输出）
+     @return 转换是否成功
+     */
+    bool Nv12ToRgb565(unsigned char* inYuv, unsigned int width, unsigned int height, unsigned char* outRgb) const;
+    
+    /**
+     NV21 转 RGB565
+     
+     @param inYuv NV21数据（输入）
+     @param width 帧-宽度
+     @param height 帧-高度
+     @param outRgb RGB565数据（输出）
+     @return 转换是否成功
+     */
+    bool Nv21ToRgb565(unsigned char* inYuv, unsigned int width, unsigned int height, unsigned char* outRgb) const;
+    
+    
+    /* RGB24 内存布局（注意大小端）
+                      B                               G                               R
+          +-----------------------------------------------------------------------------------------------+
+    高字节 | B | B | B | B | B | B | B | B | G | G | G | G | G | G | G | G | R | R | R | R | R | R | R | R |   低字节
+          +-----------------------------------------------------------------------------------------------+
+            0   1   2   3   4   5   6   7   8   9  10  11  12  13  14  15  16  17  18  19  20  21  22  23
+     */
+    
+    /**
+     I420 转 RGB24
 
-     @param inYuv yuv-I420数据（输入）
+     @param inYuv I420数据（输入）
      @param width 帧-宽度
      @param height 帧-高度
      @param outRgb RGB24数据（输出）
      @return 转换是否成功
      */
-    bool I420ToRgb24(unsigned char* inYuv, unsigned int width, unsigned int height, unsigned char* outRgb);
+    bool I420ToRgb24(unsigned char* inYuv, unsigned int width, unsigned int height, unsigned char* outRgb) const;
+    
+    /**
+     NV12 转 RGB24
+     
+     @param inYuv NV12数据（输入）
+     @param width 帧-宽度
+     @param height 帧-高度
+     @param outRgb RGB24数据（输出）
+     @return 转换是否成功
+     */
+    bool Nv12ToRgb24(unsigned char* inYuv, unsigned int width, unsigned int height, unsigned char* outRgb) const;
+    
+    /**
+     NV21 转 RGB24
+     
+     @param inYuv NV21数据（输入）
+     @param width 帧-宽度
+     @param height 帧-高度
+     @param outRgb RGB24数据（输出）
+     @return 转换是否成功
+     */
+    bool Nv21ToRgb24(unsigned char* inYuv, unsigned int width, unsigned int height, unsigned char* outRgb) const;
+    
 };
 
 #endif /* YuvToRgb_hpp */

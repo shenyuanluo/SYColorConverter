@@ -14,23 +14,23 @@
 
 /* 转换矩阵类型 */
 typedef enum __matrixType {
-    matrix_normal           = 0,    // 常规转换标准
-    matrix_bt_601           = 1,    // 标清电视标准：BT.601
-    matrix_bt_709           = 2,    // 高清电视标准：BT.709
+    Matrix_normal           = 0,    // 常规转换标准
+    Matrix_bt_601           = 1,    // 标清电视标准：BT.601
+    Matrix_bt_709           = 2,    // 高清电视标准：BT.709
 }MatrixType;
 
 /* 转换方法类型 */
 typedef enum __convertType {
-    convert_normal          = 0,    // 常规方法：浮点运算，精度高
-    convert_bitMult         = 1,    // 通过位移来避免浮点运算，精度低
-    convert_bitAdd          = 2,    // 通过位移来避免乘法运算，精度低
-    convert_table           = 3,    // 查表法（也是位移计算），精度低
+    Convert_normal          = 0,    // 常规方法：浮点运算，精度高
+    Convert_bitMult         = 1,    // 通过位移来避免浮点运算，精度低
+    Convert_bitAdd          = 2,    // 通过位移来避免乘法运算，精度低
+    Convert_table           = 3,    // 查表法（也是位移计算），精度低
 }ConvertType;
 
 /* 大小端类型 */
 typedef enum __endianType {
-    endian_little           = 0,    // 小端
-    endian_big              = 1,    // 大端
+    Endian_little           = 0,    // 小端
+    Endian_big              = 1,    // 大端
 }EndianType;
 
 /* RGB 颜色结构体 */
