@@ -10,7 +10,9 @@
 #include <unistd.h>
 #include <sys/time.h>
 #include "YuvToRgb.h"
+#include "YuvToBmp.h"
 #include "RgbToYuv.h"
+#include "RgbToBmp.h"
 
 
 #define YUV_WIDTH  480              // 视频帧宽
@@ -38,7 +40,7 @@ long long currTime()
 
 
 #pragma mark -- 测试 I420 转 RGB565
-void textI420ToRgb565()
+void testI420ToRgb565()
 {
     YuvToRgb converter;
     converter.setMatrixType(Matrix_normal);
@@ -109,7 +111,7 @@ void textI420ToRgb565()
 }
 
 #pragma mark -- 测试 NV12 转 RGB565
-void textNv12ToRgb565()
+void testNv12ToRgb565()
 {
     YuvToRgb converter;
     converter.setMatrixType(Matrix_normal);
@@ -180,7 +182,7 @@ void textNv12ToRgb565()
 }
 
 #pragma mark -- 测试 NV21 转 RGB565
-void textNv21ToRgb565()
+void testNv21ToRgb565()
 {
     YuvToRgb converter;
     converter.setMatrixType(Matrix_normal);
@@ -251,7 +253,7 @@ void textNv21ToRgb565()
 }
 
 #pragma mark -- 测试 I420 转 RGB24
-void textI420ToRgb24()
+void testI420ToRgb24()
 {
     YuvToRgb converter;
     converter.setMatrixType(Matrix_normal);
@@ -322,7 +324,7 @@ void textI420ToRgb24()
 }
 
 #pragma mark -- 测试 NV12 转 RGB24
-void textNv12ToRgb24()
+void testNv12ToRgb24()
 {
     YuvToRgb converter;
     converter.setMatrixType(Matrix_normal);
@@ -393,7 +395,7 @@ void textNv12ToRgb24()
 }
 
 #pragma mark -- 测试 NV21 转 RGB24
-void textNv21ToRgb24()
+void testNv21ToRgb24()
 {
     YuvToRgb converter;
     converter.setMatrixType(Matrix_normal);
@@ -464,7 +466,7 @@ void textNv21ToRgb24()
 }
 
 #pragma mark -- 测试 RGB565 转 I420
-void textRgb565ToI420()
+void testRgb565ToI420()
 {
     RgbToYuv converter;
     converter.setMatrixType(Matrix_normal);
@@ -535,7 +537,7 @@ void textRgb565ToI420()
 }
 
 #pragma mark -- 测试 RGB565 转 NV12
-void textRgb565ToNv12()
+void testRgb565ToNv12()
 {
     RgbToYuv converter;
     converter.setMatrixType(Matrix_normal);
@@ -606,7 +608,7 @@ void textRgb565ToNv12()
 }
 
 #pragma mark -- 测试 RGB565 转 NV21
-void textRgb565ToNv21()
+void testRgb565ToNv21()
 {
     RgbToYuv converter;
     converter.setMatrixType(Matrix_normal);
@@ -677,7 +679,7 @@ void textRgb565ToNv21()
 }
 
 #pragma mark -- 测试 RGB24 转 I420
-void textRgb24ToI420()
+void testRgb24ToI420()
 {
     RgbToYuv converter;
     converter.setMatrixType(Matrix_normal);
@@ -748,7 +750,7 @@ void textRgb24ToI420()
 }
 
 #pragma mark -- 测试 RGB24 转 NV12
-void textRgb24ToNv12()
+void testRgb24ToNv12()
 {
     RgbToYuv converter;
     converter.setMatrixType(Matrix_normal);
@@ -819,7 +821,7 @@ void textRgb24ToNv12()
 }
 
 #pragma mark -- 测试 RGB24 转 NV21
-void textRgb24ToNv21()
+void testRgb24ToNv21()
 {
     RgbToYuv converter;
     converter.setMatrixType(Matrix_normal);
@@ -890,33 +892,238 @@ void textRgb24ToNv21()
 }
 
 
+
+#pragma mark -- 测试 I420 转 BMP
+void testI420ToBmp()
+{
+    YuvToBmp converter;
+    converter.setMatrixType(Matrix_normal);
+    converter.setConvertType(Convert_normal);
+    
+    unsigned char *yuv   = (unsigned char *)malloc(I420_BUFF_SIZE);
+    if (NULL == yuv)
+    {
+        printf("Malloc data buffer failure!\n");
+        return;
+    }
+    FILE *fyuv   = fopen("XinWenLianBo_480x360_I420.yuv", "rb+");   // 打开 YUV 文件
+    
+    if (NULL == fyuv)
+    {
+        printf("Open file failure!\n");
+        free(yuv);
+        yuv   = NULL;
+        
+        return;
+    }
+    static int count = 0;
+    char fileName[64];
+    while (!feof(fyuv))
+    {
+        // 清空内存
+        memset(yuv, 0, I420_BUFF_SIZE);
+        fread(yuv, 1, I420_BUFF_SIZE, fyuv);  // 每次读取一帧 YUV 数据
+        count++;
+        sprintf(fileName, "./BMP/XinWenLianBo_480x360_I420_Frame_%d.bmp", count);
+        converter.I420ToBmp(yuv, YUV_WIDTH, YUV_HEIGHT, fileName);    // 转换成 BMP
+    }
+    fclose(fyuv);
+    free(yuv);
+    yuv   = NULL;
+}
+
+#pragma mark -- 测试 NV12 转 BMP
+void testNV12ToBmp()
+{
+    YuvToBmp converter;
+    converter.setMatrixType(Matrix_normal);
+    converter.setConvertType(Convert_normal);
+    
+    unsigned char *yuv   = (unsigned char *)malloc(NV12_BUFF_SIZE);
+    if (NULL == yuv)
+    {
+        printf("Malloc data buffer failure!\n");
+        return;
+    }
+    FILE *fyuv   = fopen("XinWenLianBo_480x360_NV12.yuv", "rb+");   // 打开 YUV 文件
+    
+    if (NULL == fyuv)
+    {
+        printf("Open file failure!\n");
+        free(yuv);
+        yuv   = NULL;
+        
+        return;
+    }
+    static int count = 0;
+    char fileName[64];
+    while (!feof(fyuv))
+    {
+        // 清空内存
+        memset(yuv, 0, NV12_BUFF_SIZE);
+        fread(yuv, 1, NV12_BUFF_SIZE, fyuv);  // 每次读取一帧 YUV 数据
+        count++;
+        sprintf(fileName, "./BMP/XinWenLianBo_480x360_NV12_Frame_%d.bmp", count);
+        converter.Nv12ToBmp(yuv, YUV_WIDTH, YUV_HEIGHT, fileName);    // 转换成 BMP
+    }
+    fclose(fyuv);
+    free(yuv);
+    yuv   = NULL;
+}
+
+#pragma mark -- 测试 NV21 转 BMP
+void testNV21ToBmp()
+{
+    YuvToBmp converter;
+    converter.setMatrixType(Matrix_normal);
+    converter.setConvertType(Convert_normal);
+    
+    unsigned char *yuv   = (unsigned char *)malloc(NV21_BUFF_SIZE);
+    if (NULL == yuv)
+    {
+        printf("Malloc data buffer failure!\n");
+        return;
+    }
+    FILE *fyuv   = fopen("XinWenLianBo_480x360_NV21.yuv", "rb+");   // 打开 YUV 文件
+    
+    if (NULL == fyuv)
+    {
+        printf("Open file failure!\n");
+        free(yuv);
+        yuv   = NULL;
+        
+        return;
+    }
+    static int count = 0;
+    char fileName[64];
+    while (!feof(fyuv))
+    {
+        // 清空内存
+        memset(yuv, 0, NV21_BUFF_SIZE);
+        fread(yuv, 1, NV21_BUFF_SIZE, fyuv);  // 每次读取一帧 YUV 数据
+        count++;
+        sprintf(fileName, "./BMP/XinWenLianBo_480x360_NV21_Frame_%d.bmp", count);
+        converter.Nv21ToBmp(yuv, YUV_WIDTH, YUV_HEIGHT, fileName);    // 转换成 BMP
+    }
+    fclose(fyuv);
+    free(yuv);
+    yuv = NULL;
+}
+
+#pragma mark -- RGB24 转 BMP
+void testRgb24ToBmp()
+{
+    RgbToBmp converter;
+    
+    unsigned char *rgb24 = (unsigned char *)malloc(RGB_24_BUFF_SIZE);
+    if (NULL == rgb24)
+    {
+        printf("Malloc data buffer failure!\n");
+        return;
+    }
+    FILE *frgb24 = fopen("XinWenLianBo_480x360_RGB24.rgb", "rb+");  // 打开 RGB24 文件
+    
+    if (NULL == frgb24)
+    {
+        printf("Open file failure!\n");
+        free(rgb24);
+        rgb24 = NULL;
+        
+        return;
+    }
+    static int count = 0;
+    char fileName[64];
+    while (!feof(frgb24))
+    {
+        // 清空内存
+        memset(rgb24, 0, RGB_24_BUFF_SIZE);
+        fread(rgb24, 1, RGB_24_BUFF_SIZE, frgb24);  // 每次读取一帧 RGB24 数据
+        count++;
+        sprintf(fileName, "./BMP/XinWenLianBo_480x360_RGB24_Frame_%d.bmp", count);
+        converter.Rgb24ToBmp(rgb24, YUV_WIDTH, YUV_HEIGHT, fileName);
+    }
+    fclose(frgb24);
+    free(rgb24);
+    rgb24 = NULL;
+}
+
+#pragma mark -- RGB565 转 BMP
+void testRgb565ToBmp()
+{
+    RgbToBmp converter;
+    
+    unsigned char *rgb565 = (unsigned char *)malloc(RGB_565_BUFF_SIZE);
+    if (NULL == rgb565)
+    {
+        printf("Malloc data buffer failure!\n");
+        return;
+    }
+    FILE *frgb565 = fopen("XinWenLianBo_480x360_RGB565.rgb", "rb+");  // 打开 RGB565 文件
+    
+    if (NULL == frgb565)
+    {
+        printf("Open file failure!\n");
+        free(rgb565);
+        rgb565 = NULL;
+        
+        return;
+    }
+    static int count = 0;
+    char fileName[64];
+    while (!feof(frgb565))
+    {
+        // 清空内存
+        memset(rgb565, 0, RGB_565_BUFF_SIZE);
+        fread(rgb565, 1, RGB_565_BUFF_SIZE, frgb565);  // 每次读取一帧 RGB565 数据
+        count++;
+        sprintf(fileName, "./BMP/XinWenLianBo_480x360_RGB24_Frame_%d.bmp", count);
+        converter.Rgb565ToBmp(rgb565, YUV_WIDTH, YUV_HEIGHT, fileName);
+    }
+    fclose(frgb565);
+    free(rgb565);
+    rgb565 = NULL;
+}
+
+
 int main(int argc, const char * argv[])
 {
-//    textI420ToRgb565();
+//    testI420ToRgb565();
     
-//    textI420ToRgb24();
+//    testI420ToRgb24();
     
-//    textNv12ToRgb565();
+//    testNv12ToRgb565();
     
-//    textNv12ToRgb24();
+//    testNv12ToRgb24();
     
-//    textNv21ToRgb24();
+//    testNv21ToRgb24();
     
-//    textNv21ToRgb565();
+//    testNv21ToRgb565();
     
     
     
-//    textRgb565ToI420();
+//    testRgb565ToI420();
     
-//    textRgb565ToNv12();
+//    testRgb565ToNv12();
     
-//    textRgb565ToNv21();
+//    testRgb565ToNv21();
     
-//    textRgb24ToI420();
+//    testRgb24ToI420();
     
-//    textRgb24ToNv12();
+//    testRgb24ToNv12();
     
-//    textRgb24ToNv21();
+//    testRgb24ToNv21();
+    
+    
+//    testI420ToBmp();
+    
+//    testNV12ToBmp();
+    
+//    testNV21ToBmp();
+    
+    
+//    testRgb24ToBmp();
+    
+//    testRgb565ToBmp();
     
     return 0;
 }

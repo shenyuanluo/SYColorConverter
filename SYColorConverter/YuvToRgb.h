@@ -178,4 +178,4 @@ public:
     
 };
 
-#endif /* YuvToRgb_hpp */
+#endif /* YuvToRgb_h */

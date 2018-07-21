@@ -10,6 +10,8 @@
 		141372B420FB99B300291ABB /* main.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 141372B320FB99B300291ABB /* main.cpp */; };
 		141372BD20FB99E300291ABB /* YuvToRgb.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 141372BB20FB99E300291ABB /* YuvToRgb.cpp */; };
 		141372C020FB9A0400291ABB /* RgbToYuv.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 141372BE20FB9A0400291ABB /* RgbToYuv.cpp */; };
+		142F32152100B77300DE0074 /* RgbToBmp.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 142F32132100B77300DE0074 /* RgbToBmp.cpp */; };
+		14418EA42103774C00D9F714 /* YuvToBmp.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 14418EA32103774C00D9F714 /* YuvToBmp.cpp */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXCopyFilesBuildPhase section */
@@ -32,6 +34,10 @@
 		141372BE20FB9A0400291ABB /* RgbToYuv.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = RgbToYuv.cpp; sourceTree = "<group>"; };
 		141372BF20FB9A0400291ABB /* RgbToYuv.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = RgbToYuv.h; sourceTree = "<group>"; };
 		142DEED320FC3C05008FC7F4 /* Converter.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = Converter.h; sourceTree = "<group>"; };
+		142F32132100B77300DE0074 /* RgbToBmp.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = RgbToBmp.cpp; sourceTree = "<group>"; };
+		142F32142100B77300DE0074 /* RgbToBmp.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = RgbToBmp.h; sourceTree = "<group>"; };
+		14418EA22103774C00D9F714 /* YuvToBmp.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = YuvToBmp.h; sourceTree = "<group>"; };
+		14418EA32103774C00D9F714 /* YuvToBmp.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = YuvToBmp.cpp; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -74,10 +80,14 @@
 			isa = PBXGroup;
 			children = (
 				142DEED320FC3C05008FC7F4 /* Converter.h */,
-				141372BB20FB99E300291ABB /* YuvToRgb.cpp */,
-				141372BC20FB99E300291ABB /* YuvToRgb.h */,
+				142F32132100B77300DE0074 /* RgbToBmp.cpp */,
+				142F32142100B77300DE0074 /* RgbToBmp.h */,
 				141372BE20FB9A0400291ABB /* RgbToYuv.cpp */,
 				141372BF20FB9A0400291ABB /* RgbToYuv.h */,
+				14418EA32103774C00D9F714 /* YuvToBmp.cpp */,
+				14418EA22103774C00D9F714 /* YuvToBmp.h */,
+				141372BB20FB99E300291ABB /* YuvToRgb.cpp */,
+				141372BC20FB99E300291ABB /* YuvToRgb.h */,
 			);
 			path = SYColorConverter;
 			sourceTree = "<group>";
@@ -140,6 +150,8 @@
 			files = (
 				141372B420FB99B300291ABB /* main.cpp in Sources */,
 				141372BD20FB99E300291ABB /* YuvToRgb.cpp in Sources */,
+				14418EA42103774C00D9F714 /* YuvToBmp.cpp in Sources */,
+				142F32152100B77300DE0074 /* RgbToBmp.cpp in Sources */,
 				141372C020FB9A0400291ABB /* RgbToYuv.cpp in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;

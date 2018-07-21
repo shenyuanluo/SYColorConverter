@@ -182,4 +182,4 @@ public:
     
 };
 
-#endif /* RgbToYuv_hpp */
+#endif /* RgbToYuv_h */
